@@ -3,6 +3,7 @@ import json
 import csv
 from PIL import Image
 from io import BytesIO
+import re  # Add this line to import the 're' module
 
 # Set up CSV file
 with open('image_sizes.csv', 'w', newline='') as csvfile:
@@ -10,7 +11,7 @@ with open('image_sizes.csv', 'w', newline='') as csvfile:
     writer.writerow(['Image Name', 'Image Size'])
 
 # Read in URLs from JSON file
-with open('website_links.json') as json_file:
+with open('urls.json') as json_file:
     urls = json.load(json_file)
 
 # Iterate through each URL
