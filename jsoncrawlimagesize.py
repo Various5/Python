@@ -10,7 +10,7 @@ with open('image_sizes.csv', 'w', newline='') as csvfile:
     writer.writerow(['Image Name', 'Image Size'])
 
 # Read in URLs from JSON file
-with open('urls.json') as json_file:
+with open('website_links.json') as json_file:
     urls = json.load(json_file)
 
 # Iterate through each URL
