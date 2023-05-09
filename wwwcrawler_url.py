@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from urllib.parse import urlparse
+import time
 
 def get_links(url):
     response = requests.get(url)
@@ -18,29 +19,30 @@ def crawl_website(url):
     visited = set()
     links.add(url)
     domain = urlparse(url).netloc
-    while len(links) > 0:
-        current_url = links.pop()
-        if current_url in visited:
+    for i, link in enumerate(links):
+        if i % 10 == 0 and i > 0:
+            time.sleep(2)
+        if link in visited:
             continue
-        if not current_url.startswith('http'):
-            current_url = 'http://' + current_url
-        if not current_url.startswith('https'):
-            current_url = 'https://' + current_url
-        if urlparse(current_url).netloc != domain:
+        if not link.startswith('http'):
+            link = 'http://' + link
+        if not link.startswith('https'):
+            link = 'https://' + link
+        if urlparse(link).netloc != domain:
             continue
         try:
-            current_links = get_links(current_url)
+            current_links = get_links(link)
         except requests.exceptions.ConnectionError:
-            print('Skipping:', current_url)
+            print('Skipping:', link)
             continue
-        visited.add(current_url)
+        visited.add(link)
         if len(visited) % 50 == 0:
             json_data = json.dumps(list(visited))
             with open('website_links.json', 'w') as f:
                 f.write(json_data)
-        for link in current_links:
-            if link not in visited:
-                links.add(link)
+        for sub_link in current_links:
+            if sub_link not in visited:
+                links.add(sub_link)
     json_data = json.dumps(list(visited))
     with open('website_links.json', 'w') as f:
         f.write(json_data)
