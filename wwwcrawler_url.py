@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from urllib.parse import urlparse
-from tqdm import tqdm
 
 def get_links(url):
     response = requests.get(url)
@@ -19,27 +18,29 @@ def crawl_website(url):
     visited = set()
     links.add(url)
     domain = urlparse(url).netloc
-    with tqdm(total=len(links)) as pbar:
-        while len(links) > 0:
-            current_url = links.pop()
-            if current_url in visited:
-                continue
-            if not current_url.startswith('http'):
-                current_url = 'http://' + current_url
-            if not current_url.startswith('https'):
-                current_url = 'https://' + current_url
-            if urlparse(current_url).netloc != domain:
-                continue
-            try:
-                current_links = get_links(current_url)
-            except requests.exceptions.ConnectionError:
-                print('Skipping:', current_url)
-                continue
-            visited.add(current_url)
-            for link in current_links:
-                if link not in visited:
-                    links.add(link)
-            pbar.update(1)
+    num_visited = 0
+    while len(links) > 0:
+        current_url = links.pop()
+        if current_url in visited:
+            continue
+        if not current_url.startswith('http'):
+            current_url = 'http://' + current_url
+        if not current_url.startswith('https'):
+            current_url = 'https://' + current_url
+        if urlparse(current_url).netloc != domain:
+            continue
+        print('Crawling:', current_url)
+        try:
+            current_links = get_links(current_url)
+        except requests.exceptions.ConnectionError:
+            print('Skipping:', current_url)
+            continue
+        visited.add(current_url)
+        num_visited += 1
+        for link in current_links:
+            if link not in visited:
+                links.add(link)
+    print(num_visited, 'urls crawled')
     return visited
 
 if __name__ == '__main__':
