@@ -19,7 +19,7 @@ def crawl_website(url, timeout, save_count):
     visited = set()
     links.add(url)
     domain = urlparse(url).netloc
-    for i, link in enumerate(links):
+    for i, link in enumerate(list(links)):
         if i % save_count == 0 and i > 0:
             json_data = json.dumps(list(visited))
             with open('website_links.json', 'w') as f:
@@ -40,6 +40,7 @@ def crawl_website(url, timeout, save_count):
             print('Skipping:', link)
             continue
         visited.add(link)
+        print(f'Visited: {len(visited)}', end='\r')
         for sub_link in current_links:
             if sub_link not in visited:
                 links.add(sub_link)
