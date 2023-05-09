@@ -8,8 +8,16 @@ def get_links(url):
     links = []
     for link in soup.find_all('a'):
         href = link.get('href')
-        if href.startswith('http'):# including both http and https links
+        if href is not None and href.startswith(('http', 'https')):
             links.append(href)
+    for link in soup.find_all('link'):
+        href = link.get('href')
+        if href is not None and href.startswith(('http', 'https')):
+            links.append(href)
+    for script in soup.find_all('script'):
+        src = script.get('src')
+        if src is not None and src.startswith(('http', 'https')):
+            links.append(src)
     return links
 
 def crawl_website(url):
