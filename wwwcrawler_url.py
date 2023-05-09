@@ -14,13 +14,17 @@ def get_links(url):
             links.append(href)
     return links
 
-def crawl_website(url):
+def crawl_website(url, timeout, save_count):
     links = set()
     visited = set()
     links.add(url)
     domain = urlparse(url).netloc
     for i, link in enumerate(links):
-        if i % 10 == 0 and i > 0:
+        if i % save_count == 0 and i > 0:
+            json_data = json.dumps(list(visited))
+            with open('website_links.json', 'w') as f:
+                f.write(json_data)
+        if i % timeout == 0 and i > 0:
             time.sleep(2)
         if link in visited:
             continue
@@ -36,10 +40,6 @@ def crawl_website(url):
             print('Skipping:', link)
             continue
         visited.add(link)
-        if len(visited) % 50 == 0:
-            json_data = json.dumps(list(visited))
-            with open('website_links.json', 'w') as f:
-                f.write(json_data)
         for sub_link in current_links:
             if sub_link not in visited:
                 links.add(sub_link)
@@ -50,4 +50,6 @@ def crawl_website(url):
 
 if __name__ == '__main__':
     url = input('Enter a website URL: ')
-    visited = crawl_website(url)
+    timeout = int(input('Enter the timeout (in seconds) between URLs: '))
+    save_count = int(input('Enter the number of URLs after which the JSON data is saved: '))
+    visited = crawl_website(url, timeout, save_count)
