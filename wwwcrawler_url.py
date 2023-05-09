@@ -28,22 +28,24 @@ def crawl_website(url):
             current_url = 'https://' + current_url
         if urlparse(current_url).netloc != domain:
             continue
-        print(len(visited), 'urls visited')
         try:
             current_links = get_links(current_url)
         except requests.exceptions.ConnectionError:
             print('Skipping:', current_url)
             continue
         visited.add(current_url)
+        if len(visited) % 50 == 0:
+            json_data = json.dumps(list(visited))
+            with open('website_links.json', 'w') as f:
+                f.write(json_data)
         for link in current_links:
             if link not in visited:
                 links.add(link)
-    print(len(visited), 'urls visited')
+    json_data = json.dumps(list(visited))
+    with open('website_links.json', 'w') as f:
+        f.write(json_data)
     return visited
 
 if __name__ == '__main__':
     url = input('Enter a website URL: ')
     visited = crawl_website(url)
-    json_data = json.dumps(list(visited))
-    with open('website_links.json', 'w') as f:
-        f.write(json_data)
