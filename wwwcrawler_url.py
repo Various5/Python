@@ -18,7 +18,6 @@ def crawl_website(url):
     visited = set()
     links.add(url)
     domain = urlparse(url).netloc
-    unique_urls = set()
     while len(links) > 0:
         current_url = links.pop()
         if current_url in visited:
@@ -29,20 +28,18 @@ def crawl_website(url):
             current_url = 'https://' + current_url
         if urlparse(current_url).netloc != domain:
             continue
-        print('Crawling:', current_url)
+        print(len(visited), 'urls visited')
         try:
             current_links = get_links(current_url)
         except requests.exceptions.ConnectionError:
             print('Skipping:', current_url)
             continue
         visited.add(current_url)
-        unique_urls.add(current_url)
-        print(len(unique_urls), 'unique urls crawled')
         for link in current_links:
             if link not in visited:
                 links.add(link)
-    print(len(unique_urls), 'unique urls crawled')
-    return unique_urls
+    print(len(visited), 'urls visited')
+    return visited
 
 if __name__ == '__main__':
     url = input('Enter a website URL: ')
