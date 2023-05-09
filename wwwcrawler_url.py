@@ -8,7 +8,7 @@ def get_links(url):
     links = []
     for link in soup.find_all('a'):
         href = link.get('href')
-        if href.startswith('https'):
+        if href.startswith('http'):# including both http and https links
             links.append(href)
     return links
 
