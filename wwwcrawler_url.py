@@ -37,6 +37,7 @@ def crawl_website(url):
             continue
         visited.add(current_url)
         unique_urls.add(current_url)
+        print(len(unique_urls), 'unique urls crawled')
         for link in current_links:
             if link not in visited:
                 links.add(link)
