@@ -6,7 +6,6 @@ from PIL import ImageFile
 from io import BytesIO
 import re
 import time
-import wget
 
 # Set up CSV file
 with open('image_sizes.csv', 'w', newline='') as csvfile:
@@ -21,7 +20,7 @@ with open('urls.json') as json_file:
 def get_image_size(image):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     try:
-        img_data = wget.download(image, headers=headers)
+        img_data = requests.get(image, headers=headers, timeout=30).content
         parser = ImageFile.Parser()
         parser.feed(img_data)
         img_size = len(img_data) / 1024.0
