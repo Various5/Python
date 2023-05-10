@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from PIL import ImageFile
 from io import BytesIO
 import re
+import time
 
 # Set up CSV file
 with open('image_sizes.csv', 'w', newline='') as csvfile:
@@ -20,8 +21,9 @@ timeout = 10
 
 # Define a function to get the size of an image
 def get_image_size(image):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     try:
-        img_data = requests.get(image, timeout=timeout, stream=True).content
+        img_data = requests.get(image, headers=headers, timeout=timeout, stream=True).content
         parser = ImageFile.Parser()
         parser.feed(img_data)
         img_size = len(img_data) / 1024.0
@@ -42,7 +44,8 @@ for url in urls:
         print("Processing URL:", url)
 
         # Get page content
-        response = requests.get(url, timeout=timeout)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        response = requests.get(url, headers=headers, timeout=timeout)
         page_content = response.content
 
         # Get all images on page
@@ -52,11 +55,12 @@ for url in urls:
             images.extend(re.findall(r'(?i)([^<>\"\']*?\.(?:%s))' % fmt, str(page_content)))
 
         # Process each image
-        with ThreadPoolExecutor() as executor:
-            executor.map(get_image_size, images)
+        for image in images:
+            get_image_size(image)
+            time.sleep(1) # Add a delay between requests
 
-    except requests.exceptions.Timeout:
-        print("Request timed out for URL: ", url)
+    except requests.exceptions.RequestException:
+        print("Request failed for URL: ", url)
         continue
 
 # Close CSV file
