@@ -1,4 +1,4 @@
-import requests 
+import requests
 import json
 import csv
 from concurrent.futures import ThreadPoolExecutor
@@ -6,6 +6,7 @@ from PIL import ImageFile
 from io import BytesIO
 import re
 import time
+import wget
 
 # Set up CSV file
 with open('image_sizes.csv', 'w', newline='') as csvfile:
@@ -16,14 +17,11 @@ with open('image_sizes.csv', 'w', newline='') as csvfile:
 with open('urls.json') as json_file:
     urls = json.load(json_file)
 
-# Set request timeout limit to 10 seconds
-timeout = 10
-
 # Define a function to get the size of an image
 def get_image_size(image):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     try:
-        img_data = requests.get(image, headers=headers, timeout=timeout, stream=True).content
+        img_data = wget.download(image, headers=headers)
         parser = ImageFile.Parser()
         parser.feed(img_data)
         img_size = len(img_data) / 1024.0
@@ -40,8 +38,9 @@ def get_image_size(image):
                 writer.writerow([img_name, '{:.2f} KB'.format(img_size)])
         processed_images.add(img_name)
         print("Processed image:", img_name, "| Size:", '{:.2f}'.format(img_size), "KB")
-    except:
-        print("Could not retrieve size for image: ", image)
+    except Exception as e:
+        print("Error retrieving size for image: ", image)
+        print("Error message:", e)
 
 # Iterate through each URL
 for url in urls:
@@ -50,7 +49,7 @@ for url in urls:
 
         # Get page content
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
-        response = requests.get(url, headers=headers, timeout=timeout)
+        response = requests.get(url, headers=headers, timeout=30)
         page_content = response.content
 
         # Get all images on page
@@ -61,12 +60,13 @@ for url in urls:
 
         # Process each image
         processed_images = set()
-        for image in images:
-            get_image_size(image)
+        with ThreadPoolExecutor() as executor:
+            executor.map(get_image_size, images)
             time.sleep(1) # Add a delay between requests
 
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
         print("Request failed for URL: ", url)
+        print("Error message:", e)
         continue
 
 # Close CSV file
