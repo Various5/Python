@@ -2,51 +2,46 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from urllib.parse import urlparse
+from collections import deque
 import time
 
 def get_links(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    links = []
+    links = set()
     for link in soup.find_all('a'):
         href = link.get('href')
-        if href is not None and (href.startswith('http') or href.startswith('https')):
-            links.append(href)
+        if href is not None:
+            scheme = urlparse(href).scheme or urlparse(url).scheme
+            href = urlparse(href)._replace(scheme=scheme).geturl()
+            if scheme in ('http', 'https') and urlparse(href).netloc == urlparse(url).netloc:
+                links.add(href)
     return links
 
 def crawl_website(url, timeout, save_count):
-    links = set()
+    links = deque([url])
     visited = set()
-    links.add(url)
     domain = urlparse(url).netloc
-    while len(links) > 0:
-        links_copy = links.copy()
-        for link in links_copy:
-            if len(visited) % save_count == 0 and len(visited) > 0:
-                json_data = json.dumps(list(visited))
-                with open('website_links.json', 'w') as f:
-                    f.write(json_data)
-            if len(visited) % timeout == 0 and len(visited) > 0:
-                time.sleep(2)
-            if link in visited:
-                continue
-            if not link.startswith('http'):
-                link = 'http://' + link
-            if not link.startswith('https'):
-                link = 'https://' + link
-            if urlparse(link).netloc != domain:
-                continue
-            try:
-                current_links = get_links(link)
-            except requests.exceptions.ConnectionError:
-                print('Skipping:', link)
-                continue
-            visited.add(link)
-            print(f'Visited: {len(visited)}', end='\r')
-            for sub_link in current_links:
-                if sub_link not in visited:
-                    links.add(sub_link)
-            links.remove(link)
+    while links:
+        link = links.popleft()
+        if len(visited) % save_count == 0 and len(visited) > 0:
+            json_data = json.dumps(list(visited))
+            with open('website_links.json', 'w') as f:
+                f.write(json_data)
+        if len(visited) % timeout == 0 and len(visited) > 0:
+            time.sleep(2)
+        if link in visited:
+            continue
+        try:
+            current_links = get_links(link)
+        except requests.exceptions.ConnectionError:
+            print('Skipping:', link)
+            continue
+        visited.add(link)
+        print(f'Visited: {len(visited)}', end='\r')
+        for sub_link in current_links:
+            if sub_link not in visited and sub_link not in links:
+                links.append(sub_link)
     json_data = json.dumps(list(visited))
     with open('website_links.json', 'w') as f:
         f.write(json_data)
