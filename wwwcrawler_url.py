@@ -6,7 +6,9 @@ from collections import deque
 import time
 
 def get_links(url):
-    response = requests.get(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+    response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     links = set()
     for link in soup.find_all('a'):
@@ -18,7 +20,9 @@ def get_links(url):
                 links.add(href)
     return links
 
-def crawl_website(url, timeout, save_count):
+def crawl_website(url, delay, save_count):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     links = deque([url])
     visited = set()
     domain = urlparse(url).netloc
@@ -28,20 +32,20 @@ def crawl_website(url, timeout, save_count):
             json_data = json.dumps(list(visited))
             with open('website_links.json', 'w') as f:
                 f.write(json_data)
-        if len(visited) % timeout == 0 and len(visited) > 0:
-            time.sleep(2)
+        if delay > 0:
+            time.sleep(delay)
         if link in visited:
             continue
         try:
             current_links = get_links(link)
-        except requests.exceptions.ConnectionError:
+            visited.add(link)
+            print(f'Visited: {len(visited)}', end='\r')
+            for sub_link in current_links:
+                if sub_link not in visited and sub_link not in links:
+                    links.append(sub_link)
+        except requests.exceptions.RequestException:
             print('Skipping:', link)
             continue
-        visited.add(link)
-        print(f'Visited: {len(visited)}', end='\r')
-        for sub_link in current_links:
-            if sub_link not in visited and sub_link not in links:
-                links.append(sub_link)
     json_data = json.dumps(list(visited))
     with open('website_links.json', 'w') as f:
         f.write(json_data)
@@ -49,6 +53,6 @@ def crawl_website(url, timeout, save_count):
 
 if __name__ == '__main__':
     url = input('Enter a website URL: ')
-    timeout = int(input('Enter the timeout (in seconds) between URLs: '))
+    delay = int(input('Enter the delay (in seconds) between requests: '))
     save_count = int(input('Enter the number of URLs after which the JSON data is saved: '))
-    visited = crawl_website(url, timeout, save_count)
+    visited = crawl_website(url, delay, save_count)
